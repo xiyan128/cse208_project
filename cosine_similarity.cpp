@@ -36,6 +36,7 @@ CryptoContext<DCRTPoly> InitializeScheme() {
     cryptoContext->Enable(KEYSWITCH);
     cryptoContext->Enable(LEVELEDSHE);
     cryptoContext->Enable(ADVANCEDSHE);
+    cryptoContext->Enable(SCHEMESWITCH);
     return cryptoContext;
 }
 
@@ -147,10 +148,6 @@ int main() {
     cryptoContext->EvalMultKeyGen(keyPair.secretKey);
     cryptoContext->EvalSumKeyGen(keyPair.secretKey);
 
-
-
-
-
 //    std::vector<int32_t> indices = {1, 2, 3};
 //    cryptoContext->EvalAtIndexKeyGen(keyPair.secretKey, indices);
 
@@ -162,48 +159,71 @@ int main() {
     }
     cryptoContext->EvalRotateKeyGen(keyPair.secretKey, indexList);
 
+    SecurityLevel sl = HEStd_NotSet;
+    BINFHE_PARAMSET slBin = TOY;
+    uint32_t logQ_ccLWE = 25;
+    uint32_t slots = 4;
+
+    auto FHEWparams = cryptoContext->EvalCKKStoFHEWSetup(sl, slBin, false, logQ_ccLWE, false, slots);
+    auto ccLWE = FHEWparams.first;
+    auto privateKeyFHEW = FHEWparams.second;
+    cryptoContext->EvalCKKStoFHEWKeyGen(keyPair, privateKeyFHEW);
+    cryptoContext->EvalSchemeSwitchingKeyGen(keyPair, privateKeyFHEW, 4, false, true);
+
+    auto pLWE1 = ccLWE.GetMaxPlaintextSpace().ConvertToInt();
+
+    const auto cryptoParams = std::dynamic_pointer_cast<CryptoParametersCKKSRNS>(cryptoContext->GetCryptoParameters());
+    ILDCRTParams<DCRTPoly::Integer> elementParams = *(cryptoParams->GetElementParams());
+    auto paramsQ = elementParams.GetParams();
+    auto modulus_CKKS_from = paramsQ[0]->GetModulus();
+    uint32_t init_level = 0;
+    if (cryptoParams->GetScalingTechnique() == FLEXIBLEAUTOEXT)
+        init_level = 1;
+
+    double scaleSign = 512.0;
+    cryptoContext->EvalCompareSwitchPrecompute(pLWE1, init_level, scaleSign);
+
     // Encrypt vectors
     auto encryptedVector1 = EncryptVector(vector1, cryptoContext, keyPair);
     auto encryptedVector2 = EncryptVector(vector2, cryptoContext, keyPair);
 
-    std::vector<std::vector<double_t>> matrix = {{1, 2, 3},
-                                                 {4, 5, 6},
-                                                 {7, 8, 9}};
+//    std::vector<std::vector<double_t>> matrix = {
+//                                                 {0.2672612419124244, 0.5345224838248488, 0.8017837257372732},
+//                                                 {0.9733285267845753, 0.16222142113076254, 0.16222142113076254},
+//                                                 {0.9091372900969896, 0.40406101782088427, 0.10101525445522107}};
 
 
+    std::vector<std::vector<double_t>> matrix = {
+            {1.2,2,3},
+            {4,5,6},
+            {7,8,9}
+    };
 
-
-    // template<typename T = ::double_t>
-    //Ciphertext<DCRTPoly> MultVectorMatrixCP(
-    //        const CryptoContext<DCRTPoly> &cc,
-    //        const Ciphertext<DCRTPoly> &vec,
-    //                                        const vector<vector<T>> &matrix
-
-
-    // Decrypt the result (optional, for verification)
 
     Plaintext decryptedResult;
 
     auto res = MultVectorMatrixCP(cryptoContext, keyPair.publicKey, encryptedVector1, matrix, true);
 
-    // Decrypt the result (optional, for verification)
+
+    // (ConstCiphertext<Element> ciphertext, PublicKey<Element> publicKey, uint32_t numValues = 0, uint32_t numSlots = 0, bool oneHot = true, uint32_t pLWE = 0, double scaleSign = 1.0)
+    auto max_res = cryptoContext->EvalMaxSchemeSwitching(res, keyPair.publicKey, 4, 4, false, 0, 100.0);
+
+
+    auto val = max_res[0], idx = max_res[1];
+
+    cryptoContext->Decrypt(keyPair.secretKey, val, &decryptedResult);
+    std::cout << "Max Value: " << decryptedResult << std::endl;
+
+    cryptoContext->Decrypt(keyPair.secretKey, idx, &decryptedResult);
+    std::cout << "Max Index: " << decryptedResult << std::endl;
+
 
     cryptoContext->Decrypt(keyPair.secretKey, res, &decryptedResult);
 
     std::cout << "Dot Product: " << decryptedResult;
 
-    // a larger example with 100 rows and 1000 columns
-    std::vector<std::vector<double_t>> largeMatrix(22, std::vector<double_t>(22, 1));
-    // large vector
-    std::vector<double_t> largeVector(22, 1);
-    // encrypt the vector
-    auto encryptedLargeVector = EncryptVector(largeVector, cryptoContext, keyPair);
 
-    auto largeRes = MultVectorMatrixCP(cryptoContext, keyPair.publicKey, encryptedLargeVector, largeMatrix, false);
 
-    // Decrypt the result (optional, for verification)
-    cryptoContext->Decrypt(keyPair.secretKey, largeRes, &decryptedResult);
-    std::cout << "Dot Product: " << decryptedResult;
 
 
 
