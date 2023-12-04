@@ -22,7 +22,7 @@ CryptoContext<DCRTPoly> InitializeScheme() {
     usint firstModSize = 60;
 #endif
 
-    uint32_t multDepth = 15;
+    uint32_t multDepth = 18;
 
     parameters.SetScalingModSize(scalingModSize);
     parameters.SetFirstModSize(firstModSize);
@@ -134,6 +134,46 @@ double CosineSimilarity(const std::vector<double> &vec1,
     return dotProduct / (length1 * length2);
 }
 
+Ciphertext<DCRTPoly> KLargestMask(const CryptoContext<DCRTPoly> &cryptoContext,
+                                  const PublicKey<DCRTPoly> publicKey,
+                                  const Ciphertext<DCRTPoly> &encryptedVector,
+                                  uint32_t k,
+                                  uint32_t numValues = 0,
+                                  uint32_t pLWE = 0, double scaleSign = 1.0
+) {
+    if (k > numValues) {
+        throw std::invalid_argument("k must be less than or equal to the number of values");
+    }
+    // run EvalMaxSchemeSwitching for k times and accumulate the mask
+    Ciphertext<DCRTPoly> mask;
+    Ciphertext<DCRTPoly> vec = encryptedVector;
+    cryptoContext->ModReduceInPlace(vec);
+
+    while (k--) {
+        auto max_res = cryptoContext->EvalMaxSchemeSwitching(
+                vec,
+                publicKey,
+                numValues,
+                numValues,
+                true,
+                pLWE, scaleSign
+        );
+
+        auto val = max_res[0], idx = max_res[1];
+
+        if (mask == nullptr) {
+            mask = idx;
+        } else {
+            mask = cryptoContext->EvalAdd(mask, idx);
+        }
+
+        auto mask_neg = cryptoContext->EvalSub(1, idx);
+        vec = cryptoContext->EvalMult(mask_neg, vec);
+    }
+
+    return mask;
+}
+
 int main() {
     // Example vectors
     std::vector<double> vector1 = {0.1, 0.2, 0.3};
@@ -147,9 +187,6 @@ int main() {
     KeyPair<DCRTPoly> keyPair = cryptoContext->KeyGen();
     cryptoContext->EvalMultKeyGen(keyPair.secretKey);
     cryptoContext->EvalSumKeyGen(keyPair.secretKey);
-
-//    std::vector<int32_t> indices = {1, 2, 3};
-//    cryptoContext->EvalAtIndexKeyGen(keyPair.secretKey, indices);
 
     std::vector<int32_t> indexList = {};
     for (int i = -100; i <= 100; i++) indexList.push_back(i);
@@ -168,14 +205,12 @@ int main() {
     auto ccLWE = FHEWparams.first;
     auto privateKeyFHEW = FHEWparams.second;
     cryptoContext->EvalCKKStoFHEWKeyGen(keyPair, privateKeyFHEW);
-    cryptoContext->EvalSchemeSwitchingKeyGen(keyPair, privateKeyFHEW, 4, false, true);
+    cryptoContext->EvalSchemeSwitchingKeyGen(keyPair, privateKeyFHEW, 4, true, true);
 
     auto pLWE1 = ccLWE.GetMaxPlaintextSpace().ConvertToInt();
 
     const auto cryptoParams = std::dynamic_pointer_cast<CryptoParametersCKKSRNS>(cryptoContext->GetCryptoParameters());
     ILDCRTParams<DCRTPoly::Integer> elementParams = *(cryptoParams->GetElementParams());
-    auto paramsQ = elementParams.GetParams();
-    auto modulus_CKKS_from = paramsQ[0]->GetModulus();
     uint32_t init_level = 0;
     if (cryptoParams->GetScalingTechnique() == FLEXIBLEAUTOEXT)
         init_level = 1;
@@ -194,9 +229,8 @@ int main() {
 
 
     std::vector<std::vector<double_t>> matrix = {
-            {1.2,2,3},
-            {4,5,6},
-            {7,8,9}
+            {0.9733285267845753, 0.16222142113076254, 0.16222142113076254},
+            {0.2672612419124244, 0.5345224838248488,  0.8017837257372732},
     };
 
 
@@ -205,22 +239,28 @@ int main() {
     auto res = MultVectorMatrixCP(cryptoContext, keyPair.publicKey, encryptedVector1, matrix, true);
 
 
-    // (ConstCiphertext<Element> ciphertext, PublicKey<Element> publicKey, uint32_t numValues = 0, uint32_t numSlots = 0, bool oneHot = true, uint32_t pLWE = 0, double scaleSign = 1.0)
-    auto max_res = cryptoContext->EvalMaxSchemeSwitching(res, keyPair.publicKey, 4, 4, false, 0, 100.0);
+    auto mask = KLargestMask(cryptoContext, keyPair.publicKey, res, 3, 4, pLWE1, scaleSign);
 
+    cryptoContext->Decrypt(keyPair.secretKey, mask, &decryptedResult);
 
-    auto val = max_res[0], idx = max_res[1];
-
-    cryptoContext->Decrypt(keyPair.secretKey, val, &decryptedResult);
-    std::cout << "Max Value: " << decryptedResult << std::endl;
-
-    cryptoContext->Decrypt(keyPair.secretKey, idx, &decryptedResult);
     std::cout << "Max Index: " << decryptedResult << std::endl;
 
+    // (ConstCiphertext<Element> ciphertext, PublicKey<Element> publicKey, uint32_t numValues = 0, uint32_t numSlots = 0, bool oneHot = true, uint32_t pLWE = 0, double scaleSign = 1.0)
+//    auto max_res = cryptoContext->EvalMaxSchemeSwitching(res, keyPair.publicKey, 4, 4, true, 0, 100.0);
 
-    cryptoContext->Decrypt(keyPair.secretKey, res, &decryptedResult);
 
-    std::cout << "Dot Product: " << decryptedResult;
+//    auto val = max_res[0], idx = max_res[1];
+//
+//    cryptoContext->Decrypt(keyPair.secretKey, val, &decryptedResult);
+//    std::cout << "Max Value: " << decryptedResult << std::endl;
+//
+//    cryptoContext->Decrypt(keyPair.secretKey, idx, &decryptedResult);
+//    std::cout << "Max Index: " << decryptedResult << std::endl;
+//
+//
+//    cryptoContext->Decrypt(keyPair.secretKey, res, &decryptedResult);
+//
+//    std::cout << "Dot Product: " << decryptedResult;
 
 
 

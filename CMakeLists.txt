@@ -63,4 +63,4 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
 
-add_executable(test_cosine_similarity linear_algebra_utils.h cosine_similarity.cpp)
+add_executable(test_cosine_similarity linear_algebra_utils.h knn.cpp)
