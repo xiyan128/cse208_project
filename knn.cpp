@@ -22,7 +22,7 @@ CryptoContext<DCRTPoly> InitializeScheme() {
     usint firstModSize = 60;
 #endif
 
-    uint32_t multDepth = 18;
+    uint32_t multDepth = 20;
 
     parameters.SetScalingModSize(scalingModSize);
     parameters.SetFirstModSize(firstModSize);
@@ -180,6 +180,15 @@ int main() {
     std::vector<double> vector2 = {0.4, 0.5, 0.6};
 
 
+    std::vector<std::vector<double_t>> matrix = {
+            {0.9733285267845753, 0.16222142113076254, 0.16222142113076254},
+            {0.2672612419124244, 0.5345224838248488,  0.8017837257372732},
+    };
+
+
+    std::vector<::double_t > labels = {1, 0, 0};
+
+
     // Initialize the encryption scheme
     CryptoContext<DCRTPoly> cryptoContext = InitializeScheme();
 
@@ -222,16 +231,7 @@ int main() {
     auto encryptedVector1 = EncryptVector(vector1, cryptoContext, keyPair);
     auto encryptedVector2 = EncryptVector(vector2, cryptoContext, keyPair);
 
-//    std::vector<std::vector<double_t>> matrix = {
-//                                                 {0.2672612419124244, 0.5345224838248488, 0.8017837257372732},
-//                                                 {0.9733285267845753, 0.16222142113076254, 0.16222142113076254},
-//                                                 {0.9091372900969896, 0.40406101782088427, 0.10101525445522107}};
-
-
-    std::vector<std::vector<double_t>> matrix = {
-            {0.9733285267845753, 0.16222142113076254, 0.16222142113076254},
-            {0.2672612419124244, 0.5345224838248488,  0.8017837257372732},
-    };
+    auto encryptedLabels = EncryptVector(labels, cryptoContext, keyPair);
 
 
     Plaintext decryptedResult;
@@ -239,11 +239,26 @@ int main() {
     auto res = MultVectorMatrixCP(cryptoContext, keyPair.publicKey, encryptedVector1, matrix, true);
 
 
-    auto mask = KLargestMask(cryptoContext, keyPair.publicKey, res, 3, 4, pLWE1, scaleSign);
+    auto mask = KLargestMask(cryptoContext, keyPair.publicKey, res, 2, 4, pLWE1, scaleSign);
 
     cryptoContext->Decrypt(keyPair.secretKey, mask, &decryptedResult);
 
-    std::cout << "Max Index: " << decryptedResult << std::endl;
+    std::cout << "mask: " << decryptedResult << std::endl;
+
+    cryptoContext->Decrypt(keyPair.secretKey, encryptedLabels, &decryptedResult);
+
+    std::cout << "encrypted_labels: " << decryptedResult << std::endl;
+
+    auto classification_res = cryptoContext->EvalMult(cryptoContext->EvalInnerProduct(encryptedLabels, mask, 3), 1.0 / 2.0);
+
+
+
+    cryptoContext->Decrypt(keyPair.secretKey, classification_res, &decryptedResult);
+    decryptedResult->SetLength(1);
+
+    std::cout << "classification result: " << decryptedResult << std::endl;
+
+
 
     // (ConstCiphertext<Element> ciphertext, PublicKey<Element> publicKey, uint32_t numValues = 0, uint32_t numSlots = 0, bool oneHot = true, uint32_t pLWE = 0, double scaleSign = 1.0)
 //    auto max_res = cryptoContext->EvalMaxSchemeSwitching(res, keyPair.publicKey, 4, 4, true, 0, 100.0);
