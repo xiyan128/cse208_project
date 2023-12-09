@@ -1,0 +1,2 @@
+Test Accuracy: 0.8667
+Time to predict on test data: 0.000255 seconds

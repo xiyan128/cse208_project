@@ -22,7 +22,7 @@ CryptoContext<DCRTPoly> InitializeScheme() {
     usint firstModSize = 60;
 #endif
 
-    uint32_t multDepth = 20;
+    uint32_t multDepth = 20; //might need to change this for weird errors
 
     parameters.SetScalingModSize(scalingModSize);
     parameters.SetFirstModSize(firstModSize);
@@ -193,7 +193,7 @@ int main() {
     CryptoContext<DCRTPoly> cryptoContext = InitializeScheme();
 
     // Generate keys
-    KeyPair<DCRTPoly> keyPair = cryptoContext->KeyGen();
+    KeyPair<DCRTPoly> keyPair = cryptoContext->KeyGen(); //you need a key for every function
     cryptoContext->EvalMultKeyGen(keyPair.secretKey);
     cryptoContext->EvalSumKeyGen(keyPair.secretKey);
 
@@ -203,7 +203,7 @@ int main() {
         indexList.push_back(1 << i);
         indexList.push_back(-(1 << i));
     }
-    cryptoContext->EvalRotateKeyGen(keyPair.secretKey, indexList);
+    cryptoContext->EvalRotateKeyGen(keyPair.secretKey, indexList); //for inner product
 
     SecurityLevel sl = HEStd_NotSet;
     BINFHE_PARAMSET slBin = TOY;
