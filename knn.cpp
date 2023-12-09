@@ -148,8 +148,10 @@ Ciphertext<DCRTPoly> KLargestMask(const CryptoContext<DCRTPoly> &cryptoContext,
     Ciphertext<DCRTPoly> mask;
     Ciphertext<DCRTPoly> vec = encryptedVector;
     cryptoContext->ModReduceInPlace(vec);
+    std::cout << "The value of myVariable is: " << k << std::endl;
 
     while (k--) {
+        std::cout << "Inside loop value of myVariable is: " << k << std::endl;
         auto max_res = cryptoContext->EvalMaxSchemeSwitching(
                 vec,
                 publicKey,

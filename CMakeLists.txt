@@ -62,5 +62,5 @@ FetchContent_Declare(
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
-
+add_executable(test_logistic_reg linear_algebra_utils.h logisticreg.cpp)
 add_executable(test_cosine_similarity linear_algebra_utils.h knn.cpp)
