@@ -24,7 +24,7 @@ CryptoContext<DCRTPoly> InitializeScheme() {
     usint firstModSize = 60;
 #endif
 
-    uint32_t multDepth = 20; //might need to change this for weird errors
+    uint32_t multDepth = 100; //might need to change this for weird errors
 
     parameters.SetScalingModSize(scalingModSize);
     parameters.SetFirstModSize(firstModSize);
@@ -60,7 +60,7 @@ Ciphertext<DCRTPoly>
 HomomorphicLogisticRegression(const CryptoContext<DCRTPoly> &cryptoContext, const Ciphertext<DCRTPoly> &encryptedVector) {
     double lowerBound = 0;
     double upperBound = 1;
-    uint32_t logisticDegree = 25; // Adjust as needed
+    uint32_t logisticDegree = 100; // Adjust as needed
     return cryptoContext->EvalLogistic(encryptedVector, lowerBound, upperBound, logisticDegree);
 }
 
