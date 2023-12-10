@@ -1,0 +1,45 @@
+ %0 = 0                                      # ClearScalar<uint1>
+ %1 = 255                                    # ClearScalar<uint8>
+ %2 = -23                                    # ClearScalar<int6>
+ %3 = 0.0026415093086641184                  # ClearScalar<float64>
+ %4 = 1.0                                    # ClearScalar<float64>
+ %5 = 1.0                                    # ClearScalar<float64>
+ %6 = [-2.8879607]                           # ClearTensor<float32, shape=(1,)>
+ %7 = 4.73919145867945e-05                   # ClearScalar<float64>
+ %8 = [[255]]                                # ClearTensor<uint8, shape=(1, 1)>
+ %9 = 80                                     # ClearScalar<uint7>
+%10 = [[255] [  0]]                          # ClearTensor<uint8, shape=(2, 1)>
+%11 = 40                                     # ClearScalar<uint6>
+%12 = 0                                      # ClearScalar<uint1>
+%13 = 255                                    # ClearScalar<uint8>
+%14 = -1                                     # ClearScalar<int1>
+%15 = 0.0038484894881447643                  # ClearScalar<float64>
+%16 = 0.0038484894881447643                  # ClearScalar<float64>
+%17 = _input_0                               # EncryptedTensor<uint7, shape=(1, 2)>
+%18 = 1                                      # ClearScalar<uint1>
+%19 = add(%17, %18)                          # EncryptedTensor<uint2, shape=(1, 2)>
+%20 = multiply(%16, %19)                     # EncryptedTensor<float64, shape=(1, 2)>
+%21 = true_divide(%20, %15)                  # EncryptedTensor<float64, shape=(1, 2)>
+%22 = add(%21, %14)                          # EncryptedTensor<float64, shape=(1, 2)>
+%23 = rint(%22)                              # EncryptedTensor<float64, shape=(1, 2)>
+%24 = clip(%23, %12, %13)                    # EncryptedTensor<float64, shape=(1, 2)>
+%25 = astype(%24, dtype=int_)                # EncryptedTensor<uint1, shape=(1, 2)>
+%26 = matmul(%25, %10)                       # EncryptedTensor<uint2, shape=(1, 1)>
+%27 = sum(%25, axis=1, keepdims=True)        # EncryptedTensor<uint2, shape=(1, 1)>
+%28 = multiply(%11, %27)                     # EncryptedTensor<uint1, shape=(1, 1)>
+%29 = add(%26, %28)                          # EncryptedTensor<uint2, shape=(1, 1)>
+%30 = astype(%29, dtype=float32)             # EncryptedTensor<float32, shape=(1, 1)>
+%31 = add(%30, %9)                           # EncryptedTensor<float32, shape=(1, 1)>
+%32 = add(%31, %8)                           # EncryptedTensor<float64, shape=(1, 1)>
+%33 = multiply(%7, %32)                      # EncryptedTensor<float64, shape=(1, 1)>
+%34 = add(%33, %6)                           # EncryptedTensor<float64, shape=(1, 1)>
+%35 = negative(%34)                          # EncryptedTensor<float64, shape=(1, 1)>
+%36 = exp(%35)                               # EncryptedTensor<float64, shape=(1, 1)>
+%37 = add(%5, %36)                           # EncryptedTensor<float64, shape=(1, 1)>
+%38 = true_divide(%4, %37)                   # EncryptedTensor<float64, shape=(1, 1)>
+%39 = true_divide(%38, %3)                   # EncryptedTensor<float64, shape=(1, 1)>
+%40 = add(%39, %2)                           # EncryptedTensor<float64, shape=(1, 1)>
+%41 = rint(%40)                              # EncryptedTensor<float64, shape=(1, 1)>
+%42 = clip(%41, %0, %1)                      # EncryptedTensor<float64, shape=(1, 1)>
+%43 = astype(%42, dtype=int_)                # EncryptedTensor<uint1, shape=(1, 1)>
+return %43

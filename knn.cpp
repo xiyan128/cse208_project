@@ -7,6 +7,7 @@ using namespace lbcrypto;
 #define VECTOR_SIZE 3
 
 CryptoContext<DCRTPoly> InitializeScheme() {
+    std::cout << "In  KNN init " << std::endl;
     CCParams<CryptoContextCKKSRNS> parameters;
 
     parameters.SetPlaintextModulus(536903681);
