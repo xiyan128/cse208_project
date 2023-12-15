@@ -1,0 +1,7 @@
+Dimension: 32
+Accuracy: 76.6667%
+Encryption time in millisec: 6.66667
+Decryption time in millisec: 6.5
+Logistic time in millisec: 90.9667
+Dtpdt time in millisec: 41.5333
+Clear Dtpdt& Logistic time in microsec: 1.96667
