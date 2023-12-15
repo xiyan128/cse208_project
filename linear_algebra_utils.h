@@ -7,10 +7,10 @@
 using namespace lbcrypto;
 using namespace std;
 
-std::vector<std::vector<double_t>> zeroExtend(
+inline std::vector<std::vector<double_t>> zeroExtend(
         std::vector<std::vector<double_t>> mat,
-        size_t numRows,
-        size_t numCols
+        const size_t numRows,
+        const size_t numCols
 ) {
     for (auto &row: mat) row.resize(numCols, 0);
     mat.resize(numRows, std::vector<double_t>(numCols, 0));
@@ -50,8 +50,8 @@ T bitCeil(T x) {
 }
 
 
-Ciphertext<DCRTPoly>
-replicate(const CryptoContext<DCRTPoly> &cc, const Ciphertext<DCRTPoly> &vec, size_t n_rows, ::size_t n_cols) {
+inline Ciphertext<DCRTPoly>
+replicate(const CryptoContext<DCRTPoly> &cc, const Ciphertext<DCRTPoly> &vec, const size_t n_rows, const ::size_t n_cols) {
     auto result = vec;
 
     for (size_t i = 0; i < log2(n_cols); i++)
@@ -62,24 +62,24 @@ replicate(const CryptoContext<DCRTPoly> &cc, const Ciphertext<DCRTPoly> &vec, si
 }
 
 
-Ciphertext<DCRTPoly> MultVectorMatrixCP(
+inline Ciphertext<DCRTPoly> MultVectorMatrixCP(
         const CryptoContext<DCRTPoly> &cc,
         PublicKey<DCRTPoly> pk,
         Ciphertext<DCRTPoly> vec,
         std::vector<std::vector<double_t>> mat,
-        bool transposing
+        const bool transposing
 ) {
-    size_t num_rows_ = mat.size();
-    size_t num_cols_ = mat[0].size();
+    const size_t num_rows_ = mat.size();
+    const size_t num_cols_ = mat[0].size();
 
-    auto num_rows = bitCeil(num_rows_);
-    auto num_cols = bitCeil(num_cols_);
+    const auto num_rows = bitCeil(num_rows_);
+    const auto num_cols = bitCeil(num_cols_);
 
     mat = zeroExtend(mat, num_rows, num_cols);
 
-    std::vector<::double_t> matFlat = flatten(mat, FlattenOrder::ColumnMajor);
+    const std::vector<::double_t> matFlat = flatten(mat, FlattenOrder::RowMajor);
 
-    Plaintext matFlatP = cc->MakeCKKSPackedPlaintext(matFlat);
+    const Plaintext matFlatP = cc->MakeCKKSPackedPlaintext(matFlat);
 
     vec = replicate(cc, vec, num_rows, num_cols_);
 

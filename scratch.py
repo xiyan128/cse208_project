@@ -1,43 +1,33 @@
 import numpy as np
-from typing import Literal
 
 
-def flatten(mat: np.ndarray, order: Literal["C", "F"] = "C") -> np.ndarray:
-    return mat.flatten(order=order)
+def generate_test_data(num_points=50):
+    # Generating random points
+    data_points = np.random.rand(num_points, 3)
 
-def replicate(vec: np.ndarray, order: Literal["C", "F"] = "C") -> np.ndarray:
-    if order == "C":
-        # Replicate the vector in C order
-        return np.tile(vec, len(vec))
-    elif order == "F":
-        # Replicate the vector in F order
-        return np.repeat(vec, len(vec))
-    else:
-        raise ValueError("Order must be 'C' or 'F'")
+    # Normalizing the points
+    normalized_points = data_points / data_points.sum(axis=1, keepdims=True)
+
+    # Decision boundary - for simplicity, let's use the average of the first two features
+    # Points with a higher third feature compared to the average of the first two are labeled 1, else 0
+    labels = (normalized_points[:, 2] > (normalized_points[:, 0] + normalized_points[:, 1]) / 2).astype(int)
+
+    # Concatenating the labels to the normalized points
+    labeled_data = np.hstack((normalized_points, labels.reshape(-1, 1)))
+
+    return labeled_data
 
 
 if __name__ == "__main__":
-    mat = np.arange(1, 17).reshape(4, 4)
-    vec = np.arange(1, 5)
 
-    print(vec @ mat)
-    
-    flattened_map = flatten(mat, order="F")
-    print(flattened_map)
-    replicated_vec = replicate(vec, order="F")
-    print(replicated_vec)
-    
-    # use them for vector-matrix multiplication
-    prod = flattened_map * replicated_vec
-    
-    for i in range(4):
-        # rotate to the left
-        rotated = np.roll(prod, -i * 4)
-        print(rotated)
-        prod = prod + rotated
-        
-        
-        print(prod)
-    
-    
-    
+    num_points = 512
+
+    # Generate the knn_data
+    test_data = generate_test_data(num_points=num_points)
+
+    print(test_data)
+
+    # dump to csv (without header)
+
+    np.savetxt(f"example_{num_points}.csv", test_data, delimiter=",", fmt='%f')
+
